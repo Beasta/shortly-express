@@ -13,7 +13,7 @@ var Link = require('../app/models/link');
 // Remove the 'x' from beforeEach block when working on
 // authentication tests.
 /************************************************************/
-var xbeforeEach = function(){};
+//var beforeEach = function(){};
 /************************************************************/
 
 
@@ -21,6 +21,7 @@ describe('', function() {
 
   beforeEach(function() {
     // log out currently signed in user
+    this.timeout(100000000);
     request('http://127.0.0.1:4568/logout', function(error, res, body) {});
 
     // delete link for roflzoo from db so it can be created later for the test
@@ -40,10 +41,10 @@ describe('', function() {
       .del()
       .catch(function(error) {
         // uncomment when writing authentication tests
-        // throw {
-        //   type: 'DatabaseError',
-        //   message: 'Failed to create test setup data'
-        // };
+        throw {
+          type: 'DatabaseError',
+          message: 'Failed to create test setup data'
+        };
       });
 
     // delete user Phillip from db so it can be created later for the test
@@ -52,10 +53,10 @@ describe('', function() {
       .del()
       .catch(function(error) {
         // uncomment when writing authentication tests
-        // throw {
-        //   type: 'DatabaseError',
-        //   message: 'Failed to create test setup data'
-        // };
+        throw {
+          type: 'DatabaseError',
+          message: 'Failed to create test setup data'
+        };
       });
   });
 
@@ -63,29 +64,30 @@ describe('', function() {
 
     var requestWithSession = request.defaults({jar: true});
 
-var xbeforeEach = function(){};
-      // create a user that we can then log-in with
-      new User({
-          'username': 'Phillip',
-          'password': 'Phillip'
-      }).save().then(function(){
-        var options = {
-          'method': 'POST',
-          'followAllRedirects': true,
-          'uri': 'http://127.0.0.1:4568/login',
-          'json': {
-            'username': 'Phillip',
-            'password': 'Phillip'
-          }
-        };
-        // login via form and save session info
-        requestWithSession(options, function(error, res, body) {
-          done();
-        });
-      });
-    });
-
+    // beforeEach (function(){
+    //     // create a user that we can then log-in with
+    //     new User({
+    //         'username': 'Phillip',
+    //         'password': 'Phillip'
+    //     }).save().then(function(){
+    //       var options = {
+    //         'method': 'POST',
+    //         'followAllRedirects': true,
+    //         'uri': 'http://127.0.0.1:4568/login',
+    //         'json': {
+    //           'username': 'Phillip',
+    //           'password': 'Phillip'
+    //         }
+    //       };
+    //       // login via form and save session info
+    //       requestWithSession(options, function(error, res, body) {
+    //         done();
+    //       });
+    //     });
+    // });
+    
     it('Only shortens valid urls, returning a 404 - Not found for invalid urls', function(done) {
+      this.timeout(1000000);
       var options = {
         'method': 'POST',
         'uri': 'http://127.0.0.1:4568/links',
@@ -178,6 +180,7 @@ var xbeforeEach = function(){};
 
         requestWithSession(options, function(error, res, body) {
           var code = res.body.code;
+          console.log('code',code);
           expect(code).to.equal(link.get('code'));
           done();
         });
@@ -213,7 +216,7 @@ var xbeforeEach = function(){};
 
   }); // 'Link creation'
 
-  xdescribe('Privileged Access:', function(){
+  describe('Privileged Access:', function(){
 
     it('Redirects to login page if a user tries to access the main page and is not signed in', function(done) {
       request('http://127.0.0.1:4568/', function(error, res, body) {
@@ -222,14 +225,14 @@ var xbeforeEach = function(){};
       });
     });
 
-    it('Redirects to login page if a user tries to create a link and is not signed in', function(done) {
+    xit('Redirects to login page if a user tries to create a link and is not signed in', function(done) {
       request('http://127.0.0.1:4568/create', function(error, res, body) {
         expect(res.req.path).to.equal('/login');
         done();
       });
     });
 
-    it('Redirects to login page if a user tries to see all of the links and is not signed in', function(done) {
+    xit('Redirects to login page if a user tries to see all of the links and is not signed in', function(done) {
       request('http://127.0.0.1:4568/links', function(error, res, body) {
         expect(res.req.path).to.equal('/login');
         done();
@@ -240,7 +243,7 @@ var xbeforeEach = function(){};
 
   xdescribe('Account Creation:', function(){
 
-    it('Signup creates a user record', function(done) {
+    xit('Signup creates a user record', function(done) {
       var options = {
         'method': 'POST',
         'uri': 'http://127.0.0.1:4568/signup',
@@ -268,7 +271,7 @@ var xbeforeEach = function(){};
       });
     });
 
-    it('Signup logs in a new user', function(done) {
+    xit('Signup logs in a new user', function(done) {
       var options = {
         'method': 'POST',
         'uri': 'http://127.0.0.1:4568/signup',
@@ -299,7 +302,7 @@ var xbeforeEach = function(){};
       });
     })
 
-    it('Logs in existing users', function(done) {
+    xit('Logs in existing users', function(done) {
       var options = {
         'method': 'POST',
         'uri': 'http://127.0.0.1:4568/login',
@@ -315,7 +318,7 @@ var xbeforeEach = function(){};
       });
     });
 
-    it('Users that do not exist are kept on login page', function(done) {
+    xit('Users that do not exist are kept on login page', function(done) {
       var options = {
         'method': 'POST',
         'uri': 'http://127.0.0.1:4568/login',
