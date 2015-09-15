@@ -58,13 +58,13 @@ app.get('/', restrict,
   res.render('index');
 });
 
-app.get('/create', 
+app.get('/create', restrict,
 function(req, res) {
   //need to be logged in.
   res.render('index');
 });
 
-app.get('/links', 
+app.get('/links', restrict,
 function(req, res) {
   Links.reset().fetch().then(function(links) {
     //if exists, you're good.  If not, need to log in and then go to create page.
@@ -72,7 +72,10 @@ function(req, res) {
   });
 });
 
-
+app.get('/signup',
+  function(req,res){
+    res.render('signup');
+  });
 
 app.post('/login', function(req, res) {
     console.log('logging in Post');
@@ -91,10 +94,32 @@ app.post('/login', function(req, res) {
           });
       }
       else {
-         res.redirect('login');
+         res.redirect('/login');
       } 
     }); 
 });
+
+app.get('/logout',
+  function(req,res){
+   console.log('logout function');
+   req.session.destroy(function(){
+    console.log('session destroy callback');
+    res.redirect('/login');
+   });
+});
+
+app.post('/signup',
+  function(req,res){
+    var username = req.body.username;
+    var password = req.body.password;
+
+    Users.create({username:username,password:password}).then(function(){
+      req.session.regenerate(function(){
+        req.session.user = username;
+        res.redirect('/');
+      })
+    });
+  })
 
 app.post('/links', 
 function(req, res) {
