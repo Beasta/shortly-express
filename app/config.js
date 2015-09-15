@@ -52,7 +52,8 @@ db.knex.schema.hasTable('users').then(function(exists){
       console.log('Created Table', table);
     });
   }
-})
+});
+
 
 /************************************************************/
 // Add additional schema definitions below

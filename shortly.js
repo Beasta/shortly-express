@@ -1,6 +1,7 @@
 var express = require('express');
 var util = require('./lib/utility');
 var partials = require('express-partials');
+var session = require('express-session');
 var bodyParser = require('body-parser');
 
 
@@ -13,6 +14,10 @@ var Click = require('./app/models/click');
 
 var app = express();
 
+Users.create({username:'bob',password:'tacular'});
+// var genuuid = function(){
+//   return "Blahedgpeth";
+// };
 app.set('views', __dirname + '/views');
 app.set('view engine', 'ejs');
 app.use(partials());
@@ -21,23 +26,74 @@ app.use(bodyParser.json());
 // Parse forms (signup/login)
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
+app.use(session({secret: 'Blahedgpeth'}));
+//   {
+//   genid: function(req) {
+//     return "Blahedgpeth"; // use UUIDs for session IDs
+//   },
+//   secret: 'keyboard cat'
+// })
 
 
-app.get('/', 
-function(req, res) {
+var  restrict = function(req, res, next) {
+  if (req.session.user) {
+    next();
+  } else {
+    req.session.error = 'Access denied!';
+    res.redirect('/login');
+    //res.render('login');
+
+  }
+};
+
+app.get('/login',
+  function(req, res) {
+    res.render('login');
+});
+
+app.get('/', restrict, 
+  function(req, res) {
+    console.log('empty page .get ')
+  //need to login.
   res.render('index');
 });
 
 app.get('/create', 
 function(req, res) {
+  //need to be logged in.
   res.render('index');
 });
 
 app.get('/links', 
 function(req, res) {
   Links.reset().fetch().then(function(links) {
+    //if exists, you're good.  If not, need to log in and then go to create page.
     res.send(200, links.models);
   });
+});
+
+
+
+app.post('/login', function(req, res) {
+    console.log('logging in Post');
+    var username = req.body.username;
+    var password = req.body.password;
+    
+    //query DB for password
+    new User({
+      username: username,
+      password: password
+    }).fetch().then(function(found){
+      if(found){
+          req.session.regenerate(function(){
+          req.session.user = username;
+          res.redirect('/');
+          });
+      }
+      else {
+         res.redirect('login');
+      } 
+    }); 
 });
 
 app.post('/links', 
