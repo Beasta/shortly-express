@@ -3,7 +3,9 @@ var util = require('./lib/utility');
 var partials = require('express-partials');
 var session = require('express-session');
 var bodyParser = require('body-parser');
-
+var passport = require('passport');
+var oauth = require('passport-oauth');
+var GitHubStrategy = require('passport-github2').Strategy
 
 var db = require('./app/config');
 var Users = require('./app/collections/users');
@@ -15,25 +17,50 @@ var Click = require('./app/models/click');
 var app = express();
 
 Users.create({username:'bob',password:'tacular'});
-// var genuuid = function(){
-//   return "Blahedgpeth";
-// };
+
 app.set('views', __dirname + '/views');
 app.set('view engine', 'ejs');
+
 app.use(partials());
-// Parse JSON (uniform resource locators)
 app.use(bodyParser.json());
-// Parse forms (signup/login)
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
 app.use(session({secret: 'Blahedgpeth'}));
-//   {
-//   genid: function(req) {
-//     return "Blahedgpeth"; // use UUIDs for session IDs
-//   },
-//   secret: 'keyboard cat'
-// })
+app.use(passport.initialize());
+app.use(passport.session());
 
+var GITHUB_CLIENT_ID = "dde0c8a94abfeff68112";
+var GITHUB_CLIENT_SECRET = "5928f72853f71c05104c039e3bf39f7bb6b3070c";
+
+passport.serializeUser(function(user, done) {
+  done(null, user);
+});
+
+passport.deserializeUser(function(obj, done) {
+  done(null, obj);
+});
+
+passport.use(new GitHubStrategy({
+    clientID: GITHUB_CLIENT_ID,
+    clientSecret: GITHUB_CLIENT_SECRET,
+    callbackURL: "http://127.0.0.1:4568/auth/github/callback"
+  },
+  function(accessToken, refreshToken, profile, done) {
+    // asynchronous verification, for effect...
+    process.nextTick(function () {
+      // To keep the example simple, the user's GitHub profile is returned to
+      // represent the logged-in user.  In a typical application, you would want
+      // to associate the GitHub account with a user record in your database,
+      // and return that user instead.
+      return done(null, profile);
+    });
+  }
+));
+
+var ensureAuthenticated = function(req, res, next) {
+  if (req.isAuthenticated()) { return next(); }
+  res.redirect('/login')
+}
 
 var  restrict = function(req, res, next) {
   if (req.session.user) {
@@ -46,25 +73,48 @@ var  restrict = function(req, res, next) {
   }
 };
 
-app.get('/login',
-  function(req, res) {
-    res.render('login');
-});
+// app.get('/login',
+//   function(req, res) {
+//     res.render('login');
+// });
 
-app.get('/', restrict, 
+// GET /auth/github
+//   Use passport.authenticate() as route middleware to authenticate the
+//   request.  The first step in GitHub authentication will involve redirecting
+//   the user to github.com.  After authorization, GitHub will redirect the user
+//   back to this application at /auth/github/callback
+app.get('/login',
+  passport.authenticate('github', { scope: [ 'user:email' ] }),
+  function(req, res){
+    // The request will be redirected to GitHub for authentication, so this
+    // function will not be called.
+  });
+
+// GET /auth/github/callback
+//   Use passport.authenticate() as route middleware to authenticate the
+//   request.  If authentication fails, the user will be redirected back to the
+//   login page.  Otherwise, the primary route function function will be called,
+//   which, in this example, will redirect the user to the home page.
+app.get('/auth/github/callback', 
+  passport.authenticate('github', { failureRedirect: '/login' }),
+  function(req, res) {
+    res.redirect('/');
+  });
+
+app.get('/', ensureAuthenticated, 
   function(req, res) {
     console.log('empty page .get ')
   //need to login.
   res.render('index');
 });
 
-app.get('/create', restrict,
+app.get('/create', ensureAuthenticated,
 function(req, res) {
   //need to be logged in.
   res.render('index');
 });
 
-app.get('/links', restrict,
+app.get('/links', ensureAuthenticated,
 function(req, res) {
   Links.reset().fetch().then(function(links) {
     //if exists, you're good.  If not, need to log in and then go to create page.
@@ -186,3 +236,9 @@ app.get('/*', function(req, res) {
 
 console.log('Shortly is listening on 4568');
 app.listen(4568);
+
+
+// Client ID
+// dde0c8a94abfeff68112
+// Client Secret
+// 5928f72853f71c05104c039e3bf39f7bb6b3070c
